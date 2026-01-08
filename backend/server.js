@@ -1,8 +1,11 @@
 const express = require("express");
+const cors = require("cors");
 const app = express();
 const PORT = 3001;
 
 app.use(express.json());
+app.use(cors());
+
 const orders = [];
 
 
@@ -47,6 +50,12 @@ app.get("/summary", (req, res) => {
     demandBySku: summary
   });
 });
+
+app.delete("/reset", (req, res) => {
+  orders.length = 0;
+  res.json({ message: "All orders reset", totalOrders: orders.length });
+});
+
 
 
 app.listen(PORT, () => {
