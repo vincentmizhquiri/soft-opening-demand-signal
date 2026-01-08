@@ -91,6 +91,29 @@ async function resetOrders() {
   }
 }
 
+async function downloadExport() {
+  try {
+    const res = await fetch(`${API_BASE}/export`);
+    const data = await res.json();
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json"
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `soft-opening-orders-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error(err);
+    setMessage("⚠️ Could not export orders.");
+  }
+}
+
 
   return (
   <div
@@ -191,22 +214,41 @@ async function resetOrders() {
       boxShadow: "0 4px 12px rgba(0,0,0,0.06)"
     }}
   >
-    <h2>Live Demand Summary</h2>
-    <button
-  onClick={resetOrders}
-  style={{
-    padding: "8px 12px",
-    borderRadius: 10,
-    border: "1px solid #f97316",
-    background: "white",
-    color: "#9a3412",
-    fontWeight: 700,
-    cursor: "pointer",
-    marginBottom: 12
-  }}
->
-  Reset Demo
-</button>
+   <h2>Live Demand Summary</h2>
+
+<div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+  <button
+    onClick={resetOrders}
+    style={{
+      padding: "8px 12px",
+      borderRadius: 10,
+      border: "1px solid #f97316",
+      background: "white",
+      color: "#9a3412",
+      fontWeight: 700,
+      cursor: "pointer"
+    }}
+  >
+    Reset Live View
+  </button>
+
+  <button
+    onClick={downloadExport}
+    style={{
+      padding: "8px 12px",
+      borderRadius: 10,
+      border: "none",
+      background: "#15803d",
+      color: "white",
+      fontWeight: 700,
+      cursor: "pointer",
+      boxShadow: "0 2px 8px rgba(21, 128, 61, 0.35)"
+    }}
+  >
+    Download Export
+  </button>
+</div>
+
 
     <p><strong>Total Orders:</strong> {summary.totalOrders}</p>
 
@@ -223,6 +265,7 @@ async function resetOrders() {
       </ul>
       
     )}
+
 <h3 style={{ marginTop: 18 }}>Orders by Hour (EST)</h3>
 
 {hourly.hourlyTotals && Object.keys(hourly.hourlyTotals).length === 0 ? (
