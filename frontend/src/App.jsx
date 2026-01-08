@@ -10,6 +10,7 @@ export default function App() {
   ]);
 
   const [summary, setSummary] = useState({ totalOrders: 0, demandBySku: {} });
+  const [hourly, setHourly] = useState({ hourlyTotals: {}, hourlyBySku: {} });
   const [message, setMessage] = useState("");
 
   async function fetchSummary() {
@@ -22,6 +23,15 @@ export default function App() {
       setMessage("⚠️ Could not fetch summary. Is the backend running?");
     }
   }
+async function fetchHourly() {
+  try {
+    const res = await fetch(`${API_BASE}/hourly`);
+    const data = await res.json();
+    setHourly(data);
+  } catch (err) {
+    console.error(err);
+  }
+}
 
   async function placeOrder(sku) {
     setMessage("");
@@ -41,6 +51,8 @@ export default function App() {
       const data = await res.json();
       setMessage(`✅ Order received! Total orders: ${data.totalOrders}`);
       fetchSummary();
+      fetchHourly();
+
     } catch (err) {
       console.error(err);
       setMessage("⚠️ Order failed. Is the backend running?");
@@ -48,9 +60,15 @@ export default function App() {
   }
 
   useEffect(() => {
+  fetchSummary();
+  fetchHourly();
+
+  const interval = setInterval(() => {
     fetchSummary();
-    const interval = setInterval(fetchSummary, 5000);
-    return () => clearInterval(interval);
+    fetchHourly();
+  }, 5000);
+
+  return () => clearInterval(interval);
   }, []);
 
 function skuToName(sku) {
@@ -65,6 +83,8 @@ async function resetOrders() {
     const data = await res.json();
     setMessage("🧹 Demo reset — all orders cleared.");
     fetchSummary();
+    fetchHourly();
+
   } catch (err) {
     console.error(err);
     setMessage("⚠️ Could not reset orders.");
@@ -201,7 +221,31 @@ async function resetOrders() {
           </li>
         ))}
       </ul>
+      
     )}
+<h3 style={{ marginTop: 18 }}>Orders by Hour (EST)</h3>
+
+{hourly.hourlyTotals && Object.keys(hourly.hourlyTotals).length === 0 ? (
+  <p style={{ color: "#6b7280" }}>No hourly data yet.</p>
+) : (
+  <ul>
+    {Object.entries(hourly.hourlyTotals).map(([hour, total]) => (
+      <li key={hour} style={{ marginBottom: 10 }}>
+        <strong>{hour}:00</strong> — {total} total orders
+
+        {hourly.hourlyBySku?.[hour] && (
+          <ul style={{ marginTop: 6 }}>
+            {Object.entries(hourly.hourlyBySku[hour]).map(([sku, qty]) => (
+              <li key={sku}>
+                {skuToName(sku)}: {qty}
+              </li>
+            ))}
+          </ul>
+        )}
+      </li>
+    ))}
+  </ul>
+)}
 
     <p style={{ color: "#6b7280", marginTop: 16 }}>
       Auto-refreshes every 5 seconds.
